@@ -1,0 +1,152 @@
+# Training task from the JetBrains Academy - Loan calculator
+# The program should be able to calculate annuity and differentiate payments,
+# calculate the maximum amount of loan principal and time for paying for annuity payment
+# and make a paying schedule for the differentiate payment
+
+# We are using the data input from the command line
+# by parsing through ArgParse module
+
+# Importing of modules
+
+import argparse
+import math
+
+# part responsible for parsing of defined values: payment_type, principal, periods, interest, annuity payment
+parser = argparse.ArgumentParser(formatter_class=argparse.MetavarTypeHelpFormatter)
+parser.add_argument("--type", type=str,
+                    # choices=["diff", "annuity"],
+                    help="Choose the type of payment, you can choose diff or annuity")
+parser.add_argument("--principal", type=float,
+                    help="Enter the principal value")
+parser.add_argument("--periods", type=int,
+                    help="Enter the number of periods")
+parser.add_argument("--interest", type=float,
+                    help="Enter the interest rate")
+parser.add_argument("--payment", type=float,
+                    help="Enter the monthly payment for the annuity loan")
+parser.parse_args()
+current_arguments = parser.parse_args()
+payment_type = current_arguments.type
+
+# Definition of the base variables (their values will be changed depends on values entered by user)
+
+principal_1 = int(0)
+interest_1 = int(0)
+payment_1 = int(0)
+periods_1 = int(0)
+
+# managing of possible user mistakes by the try - except constructions
+try:
+    principal_1 = float(current_arguments.principal)
+    principal_bool = True
+except:
+    principal_bool = False
+
+if current_arguments.periods is None:
+    periods_bool = False
+elif current_arguments.periods is not None:
+    periods_1 = current_arguments.periods
+    if periods_1 < 0:
+        periods_bool = False
+    elif periods_1 > 0:
+        periods_bool = True
+try:
+    interest_1 = float(current_arguments.interest) / 1200
+    interest_bool = True
+    if interest_1 <= 0:
+        interest_bool = False
+except:
+    interest_bool = False
+try:
+    payment_1 = float(current_arguments.payment)
+    payment_bool = True
+except:
+    payment_bool = False
+
+
+# calculating of differentiate payment
+# parameters: month payment in each string and total overpayment
+# cycle start to work if interest and periods are defined correctly
+
+while interest_bool is True:
+
+    # processing of regular differentiating payment
+    if payment_type == 'diff':
+        current_month = int(0)
+        diff_total_payment = 0
+        amount_for_paying = principal_1
+        for money in range(0, periods_1):
+            current_month += 1
+            mth_payment = math.ceil((principal_1 / periods_1) + interest_1 * (principal_1 - principal_1 * (current_month - 1) / periods_1))
+            amount_for_paying -= mth_payment
+            # print(current_month)
+            print(f'Month {current_month}: payment is {mth_payment}')
+            diff_total_payment += mth_payment
+        # print(diff_total_payment)
+        overpayment = diff_total_payment - principal_1
+        # print(' ')
+        print(f'Overpayment = {int(overpayment)}')
+
+    # mistake occurs when the diff payment regime is enabled and payment amount is defined as well
+    elif payment_type == 'diff' and payment_bool is True:
+        print('Incorrect parameters')
+
+    # annuity payment
+    # processing user would like to calculate the annuity payment and overpayment
+    elif payment_type == 'annuity' and payment_bool is False:
+        annuity_total_payment = 0
+        loan_interest = interest_1
+        monthly_payment = math.ceil(principal_1 * ((interest_1 * (1 + interest_1) ** periods_1) / (-1 + (1 + interest_1) ** periods_1)))
+        print(f'Your annuity payment  {monthly_payment} ! ')
+        for money in range(0, periods_1):
+            annuity_total_payment += monthly_payment
+        annuity_overpayment = annuity_total_payment - principal_1
+        print(f'Overpayment = {int(annuity_overpayment)}')
+
+    # algorithm when user would like to calculate how long he should pay the loan
+    elif payment_type == 'annuity' and payment_bool is True and principal_bool is True and periods_bool is False:
+        number_payments = math.ceil(math.log((payment_1 / (payment_1 - interest_1 * principal_1)), 1 + interest_1))
+        if number_payments > 12 and number_payments % 12 != 0:
+            year_number = math.floor(number_payments / 12)
+            month_number = number_payments - year_number * 12
+            if year_number == 1:
+                year_grammar_end = 'year'
+            else:
+                year_grammar_end = 'years'
+            if month_number == 1:
+                month_grammar_end = 'month'
+            else:
+                month_grammar_end = 'months'
+            print(f'It will take {year_number} {year_grammar_end} and {month_number} {month_grammar_end} to repay the loan')
+        elif number_payments % 12 == 0:
+            year_number = math.floor(number_payments / 12)
+            if year_number == 1:
+                year_grammar_end = 'year'
+            else:
+                year_grammar_end = 'years'
+            print(f'It will take {year_number} {year_grammar_end} to repay the loan')
+        else:
+            month_number = number_payments
+            if number_payments > 1:
+                print(f'It will take {month_number} months to repay the loan')
+            else:
+                # print(f'It will take {month_number} month to repay the loan')
+                print('Incorrect parameters')
+        print(f'Overpayment = {round(int(number_payments * payment_1 - principal_1))}')
+
+    # algorithm to calculate the maximum possible principal
+    elif payment_type == 'annuity' and payment_bool is True and periods_bool is True:
+        principal_1 = round(payment_1 / ((interest_1 * (1 + interest_1) ** periods_1) / (-1 + (1 + interest_1) ** periods_1)) - 1)
+        annuity_overpayment = (payment_1 * periods_1) - principal_1
+        print(f'Your loan principal = {int(principal_1)}!')
+        print(f'Overpayment = {round(int(annuity_overpayment))}')
+    elif payment_type == 'annuity' and payment_bool is True and payment_1 <= 0:
+        print('Incorrect parameters')
+
+    # identification of mistake if there it was defined incorrect payment type
+    else:
+        print('Incorrect parameters')
+    break
+else:
+    print('Incorrect parameters')
+
